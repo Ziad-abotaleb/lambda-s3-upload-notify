@@ -1,1 +1,0 @@
-# lambda-s3-upload-notify
