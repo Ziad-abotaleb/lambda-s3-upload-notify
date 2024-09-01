@@ -1,54 +1,68 @@
-import json
 import boto3
 from botocore.exceptions import ClientError
 
-def lambda_handler(event, context):
-    # Extract bucket name and object key from the event
+def send_email():
+    SENDER = "yourmail" #Enter your mail here
+    RECIPIENT = "yourmail" #Enter your mail here
+    AWS_REGION = "us-east-1" #Select region
+
+   
+    SUBJECT = "This is test email for testing purpose..!!"
+
+   
+    BODY_TEXT = ("Hey Hi...\r\n"
+                "This email was sent with Amazon SES using the "
+                "AWS SDK for Python (Boto)."
+                )
+                
+   
+    BODY_HTML = """<html>
+    <head></head>
+    <body>
+    <h1>Hey Hi...</h1>
+    <p>This email was sent with
+        <a href='https://aws.amazon.com/ses/'>Amazon SES CQPOCS</a> using the
+        <a href='https://aws.amazon.com/sdk-for-python/'>
+        AWS SDK for Python (Boto)</a>.</p>
+    </body>
+    </html>
+                """            
+
+
+    CHARSET = "UTF-8"
+
+    client = boto3.client('ses',region_name=AWS_REGION)
+
     try:
-        bucket = event['Records'][0]['s3']['bucket']['name']
-        key = event['Records'][0]['s3']['object']['key']
-    except KeyError as e:
-        print(f"KeyError: {e}")
-        return {
-            'statusCode': 400,
-            'body': json.dumps('Invalid event format.')
-        }
-
-    # Initialize the SES client
-    ses = boto3.client('ses', region_name='us-east-1')  # Change region as needed
-
-    # Email parameters
-    sender = 'your-email@example.com'  # Replace with your verified sender email
-    recipient = 'recipient-email@example.com'  # Replace with the recipient email
-    subject = 'New S3 Object Uploaded'
-    body_text = f'A new object has been uploaded to your S3 bucket.\n\nBucket: {bucket}\nKey: {key}'
-
-    # Create the email
-    try:
-        response = ses.send_email(
-            Source=sender,
+        response = client.send_email(
             Destination={
-                'ToAddresses': [recipient]
+                'ToAddresses': [
+                    RECIPIENT,
+                ],
             },
             Message={
-                'Subject': {
-                    'Data': subject
-                },
                 'Body': {
+                    'Html': {
+        
+                        'Data': BODY_HTML
+                    },
                     'Text': {
-                        'Data': body_text
-                    }
-                }
-            }
+        
+                        'Data': BODY_TEXT
+                    },
+                },
+                'Subject': {
+
+                    'Data': SUBJECT
+                },
+            },
+            Source=SENDER
         )
     except ClientError as e:
         print(e.response['Error']['Message'])
-        return {
-            'statusCode': 500,
-            'body': json.dumps('Error sending email.')
-        }
+    else:
+        print("Email sent! Message ID:"),
+        print(response['MessageId'])
 
-    return {
-        'statusCode': 200,
-        'body': json.dumps('Email sent successfully!')
-    }
+def lambda_handler(event, context): 
+    send_email()
